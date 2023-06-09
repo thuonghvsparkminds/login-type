@@ -1,0 +1,27 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /manage-book
+spring:
+  application:
+    name: login-type
+  liquibase:
+    change-log: classpath:/db/changelog/master.xml
+    enabled: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/manage-book
+      username:${DB_USERNAME:root}
+      password:${DB_PASSWORD:29102000}
+  jpa:
+    show-sql: false
+    open-in-view: false
+    properties:
+      dialect: org.hibernate.dialect.MySQL5Dialect
+    hibernate:
+      ddl-auto: none
+app:
+  jwt:
+    secret: ${JWT_SECRET:manage-book}
+    expiration: ${JWT_EXPIRATION:900}
+    blockTime: ${JWT_EXPIRATION:1800}
+    refreshExpiration: ${JWT_REFRESH_EXPIRATION:2592000}

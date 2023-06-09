@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
+
+    <include file="db/changelog/20230609_add_entity_Role.xml" relativeToChangelogFile="false" />
+    <include file="db/changelog/20230609_add_entity_User.xml" relativeToChangelogFile="false" />
+    <include file="db/changelog/20230611_add_entity_Token_Black_List.xml" relativeToChangelogFile="false" />
+
+</databaseChangeLog>
+
