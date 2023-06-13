@@ -4,8 +4,8 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
 
-    <changeSet id="20230611-1" author="asrielha">
-        <createTable tableName="token_black_list">
+    <changeSet id="20230612-1" author="asrielha">
+        <createTable tableName="token">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -15,7 +15,20 @@
             <column name="expire_time" type="timestamp(6)">
                 <constraints nullable="false"/>
             </column>
+            <column name="token_type" type="varchar(250)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
+    </changeSet>
+    <changeSet id="20230612-2" author="asrielha">
+        <addForeignKeyConstraint baseColumnNames="user_id"
+                                 baseTableName="token"
+                                 constraintName="fk_token_user"
+                                 referencedColumnNames="id"
+                                 referencedTableName="user"/>
     </changeSet>
 
 </databaseChangeLog>
