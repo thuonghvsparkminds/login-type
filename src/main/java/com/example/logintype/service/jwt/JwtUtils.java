@@ -48,6 +48,7 @@ public class JwtUtils {
     public String getEmailFromJwtToken(String jwt) {
         return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(jwt).getBody().get("email", String.class);
     }
+
     public Long getUserIdFromJwtToken(String jwt) {
         return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(jwt).getBody().get("id", Long.class);
     }

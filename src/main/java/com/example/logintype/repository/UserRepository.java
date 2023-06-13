@@ -14,9 +14,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Boolean existsByEmail(String email);
 
-    @Query("UPDATE User u SET u.failedAttempt = :countFail, u.block_time = null " +
-            "WHERE u.email = :email")
-    public void updateFailedAttempts(int countFail, String email);
-
     Optional<User> findByEmail(String email);
 }

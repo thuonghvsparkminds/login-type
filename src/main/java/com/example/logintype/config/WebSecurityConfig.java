@@ -59,8 +59,7 @@ public class WebSecurityConfig {
         http.cors().and().csrf().disable().sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().exceptionHandling()
                 .authenticationEntryPoint(authEntryPointJwt).and().authorizeRequests()
-                .antMatchers("/signUp/**", "/swagger-ui/**", "/api-docs/**").permitAll()
-                .antMatchers("/login").permitAll()
+                .antMatchers("/api/common/**", "/swagger-ui/**", "/api-docs/**").permitAll()
                 .antMatchers("/api/private/**").hasAnyAuthority("ROLE_ADMIN")
                 .antMatchers("/api/public/**").hasAnyAuthority("ROLE_USER")
                 .anyRequest().authenticated();
