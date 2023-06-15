@@ -53,6 +53,9 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class AuthServiceImp implements AuthService{
 
+    /**
+     *
+     */
     @Value("${spring.mail.username}")
     private String username;
 
