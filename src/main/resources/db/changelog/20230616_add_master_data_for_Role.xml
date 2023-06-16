@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
+
+    <changeSet id="20230616-1" author="asrielha">
+        <insert tableName="role">
+            <column name="id"  value="1"/>
+            <column name="name"  value="ROLE_ADMIN"/>
+            <column name="role_description"  value="This role for admin"/>
+        </insert>
+        <insert tableName="role">
+            <column name="id" value="2"/>
+            <column name="name" value="ROLE_USER"/>
+            <column name="role_description" value="This role for user"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
