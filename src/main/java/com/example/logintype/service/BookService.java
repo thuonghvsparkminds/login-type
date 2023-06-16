@@ -1,6 +1,5 @@
 package com.example.logintype.service;
 
-import com.example.logintype.entity.Book;
 import com.example.logintype.service.dto.request.BookRequestDto;
 import com.example.logintype.service.dto.response.BookResponseDto;
 import org.springframework.data.domain.Page;
@@ -11,7 +10,7 @@ public interface BookService {
     /**
      *
      */
-    Page<Book> getBooks(Pageable pageable);
+    Page<BookResponseDto> getBooks(Pageable pageable);
 
     BookResponseDto getBook(Long bookId);
 
