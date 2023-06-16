@@ -32,7 +32,7 @@ public class BookServiceImpl implements BookService {
     public Page<BookResponseDto> getBooks(Pageable pageable){
 
         return bookRepository.findAll(pageable)
-                .map(book -> bookMapper.toDto(book));
+                .map(bookMapper::toDto);
     }
 
     @Override
