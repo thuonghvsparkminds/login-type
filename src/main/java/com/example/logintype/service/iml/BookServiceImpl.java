@@ -9,13 +9,12 @@ import com.example.logintype.service.FileUploadService;
 import com.example.logintype.service.dto.request.BookRequestDto;
 import com.example.logintype.service.dto.response.BookResponseDto;
 import com.example.logintype.service.dto.response.FileUploadResponseDto;
+import com.example.logintype.service.mapper.BookMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.io.File;
 
 @Service
 @RequiredArgsConstructor
@@ -27,11 +26,13 @@ public class BookServiceImpl implements BookService {
      */
     private final BookRepository bookRepository;
     private final FileUploadService fileUploadService;
+    private final BookMapper bookMapper;
 
     @Override
-    public Page<Book> getBooks(Pageable pageable){
+    public Page<BookResponseDto> getBooks(Pageable pageable){
 
-        return bookRepository.findAll(pageable);
+        return bookRepository.findAll(pageable)
+                .map(book -> bookMapper.toDto(book));
     }
 
     @Override
@@ -39,14 +40,7 @@ public class BookServiceImpl implements BookService {
 
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new ResourceNotFoundException("This book is not exist"));
-        return BookResponseDto
-                .builder()
-                .id(book.getId())
-                .bookName(book.getBookName())
-                .number(book.getNumber())
-                .imageFile(book.getImageFileUrl())
-                .available(book.getAvailable())
-                .build();
+        return bookMapper.toDto(book);
     }
 
     @Override
@@ -65,15 +59,7 @@ public class BookServiceImpl implements BookService {
         book.setNumber(request.getNumber());
         book.setAvailable(request.getNumber());
         bookRepository.save(book);
-
-        return BookResponseDto
-                .builder()
-                .id(book.getId())
-                .bookName(book.getBookName())
-                .imageFile(book.getImageFileUrl())
-                .number(request.getNumber())
-                .available(request.getNumber())
-                .build();
+        return bookMapper.toDto(book);
     }
 
     @Override

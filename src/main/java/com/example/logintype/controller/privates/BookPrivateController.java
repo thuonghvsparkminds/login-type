@@ -1,6 +1,5 @@
 package com.example.logintype.controller.privates;
 
-import com.example.logintype.entity.Book;
 import com.example.logintype.service.BookService;
 import com.example.logintype.service.dto.request.BookRequestDto;
 import com.example.logintype.service.dto.response.BookResponseDto;
@@ -28,9 +27,9 @@ public class BookPrivateController {
     private final BookService bookService;
 
     @GetMapping
-    public ResponseEntity<List<Book>> getAllBooks(@PageableDefault Pageable pageable) {
+    public ResponseEntity<List<BookResponseDto>> getAllBooks(@PageableDefault Pageable pageable) {
 
-        Page<Book> page = bookService.getBooks(pageable);
+        Page<BookResponseDto> page = bookService.getBooks(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
                 page
@@ -54,7 +53,7 @@ public class BookPrivateController {
 
     @PutMapping(value = "/{bookId}",consumes = { MediaType.APPLICATION_JSON_VALUE,
             MediaType.MULTIPART_FORM_DATA_VALUE })
-    public ResponseEntity<BookResponseDto> updateBook(
+    public ResponseEntity<Void> updateBook(
             @PathVariable("bookId") Long bookId,
             BookRequestDto requestDto
     ) {
@@ -65,7 +64,7 @@ public class BookPrivateController {
 
     @DeleteMapping(consumes = { MediaType.APPLICATION_JSON_VALUE,
             MediaType.MULTIPART_FORM_DATA_VALUE })
-    public ResponseEntity<BookResponseDto> deleteImageBook(@RequestParam Long bookId) {
+    public ResponseEntity<Void> deleteImageBook(@RequestParam Long bookId) {
 
         bookService.deleteImageBook(bookId);
         return ResponseEntity.noContent().build();
