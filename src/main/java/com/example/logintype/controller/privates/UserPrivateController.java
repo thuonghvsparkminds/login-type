@@ -1,11 +1,14 @@
 package com.example.logintype.controller.privates;
 
+import com.example.logintype.entity.User;
 import com.example.logintype.service.UserService;
 import com.example.logintype.service.dto.response.UserResponseDto;
 import com.example.logintype.service.util.PaginationUtil;
+import com.example.logintype.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
