@@ -62,11 +62,28 @@ public class BookPrivateController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping(consumes = { MediaType.APPLICATION_JSON_VALUE,
+    @DeleteMapping(value = "/{bookId}/delete-image", consumes = { MediaType.APPLICATION_JSON_VALUE,
             MediaType.MULTIPART_FORM_DATA_VALUE })
-    public ResponseEntity<Void> deleteImageBook(@RequestParam Long bookId) {
+    public ResponseEntity<Void> deleteImageBook(@PathVariable Long bookId) {
 
         bookService.deleteImageBook(bookId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{bookId}")
+    public ResponseEntity<Void> deleteBook(@PathVariable Long bookId) {
+
+        bookService.deleteBook(bookId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{bookId}/add-number-of-book")
+    public ResponseEntity<Void> deleteBook(
+            @PathVariable Long bookId,
+            @RequestParam Integer numberBook
+    ) {
+
+        bookService.addBookNumber(bookId, numberBook);
         return ResponseEntity.noContent().build();
     }
 }

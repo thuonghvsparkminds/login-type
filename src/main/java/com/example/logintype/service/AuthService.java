@@ -1,9 +1,11 @@
 package com.example.logintype.service;
 
+import com.example.logintype.service.dto.request.EmailForgotRequestDto;
 import com.example.logintype.service.dto.request.LoginRequestDto;
+import com.example.logintype.service.dto.request.ResetPasswordRequestDto;
 import com.example.logintype.service.dto.request.UserRequestDto;
 import com.example.logintype.service.dto.response.LoginResponseDto;
-import org.springframework.http.HttpStatus;
+import com.example.logintype.service.dto.response.LoginSuccessResponseDto;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -14,20 +16,25 @@ import javax.servlet.http.HttpServletResponse;
 @Service
 public interface AuthService {
 
-    HttpStatus login(LoginRequestDto loginRequestDto, HttpServletResponse response);
+    LoginResponseDto login(LoginRequestDto loginRequestDto);
 
     void logout(HttpServletRequest request, @RequestHeader String tokenReFresh);
 
-    LoginResponseDto refreshToken(@RequestHeader String tokenRefresh, HttpServletResponse response);
+    LoginSuccessResponseDto refreshToken(@RequestHeader String tokenRefresh, HttpServletResponse response);
 
-    void signUp(UserRequestDto authRequestDto);
+    void signUpWithToken(UserRequestDto authRequestDto);
 
-    void verifyUser(@RequestHeader String tokenVerify);
+    void signUpWithOtp(UserRequestDto authRequestDto);
 
-    void resendVerifyUser(@RequestBody String email);
+    void verifyUserByToken(@RequestHeader String tokenVerify);
 
-//
-//    void forgotPassword(HttpServletRequest request, EmailForgotRequestDto emailForgotRequestDto);
-//
-//    void updatePassword(String token, NewPasswordRequestDto request);
+    void verifyUserByOtp(@RequestBody Long otpToken);
+
+    void resendTokenVerifyUser(@RequestBody String email);
+
+    void resendOtpVerifyUser(@RequestBody String email);
+
+    void resetPassword(HttpServletRequest request, EmailForgotRequestDto emailForgotRequestDto);
+
+    void updatePasswordByToken(String token, ResetPasswordRequestDto request);
 }

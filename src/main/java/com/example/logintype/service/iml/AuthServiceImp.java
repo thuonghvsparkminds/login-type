@@ -5,31 +5,24 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.example.logintype.constant.Constants;
-import com.example.logintype.entity.Role;
-import com.example.logintype.entity.Token;
-import com.example.logintype.entity.TokenBlackList;
-import com.example.logintype.entity.User;
-import com.example.logintype.entity.enumrated.RoleEnum;
-import com.example.logintype.entity.enumrated.StatusEnum;
-import com.example.logintype.entity.enumrated.TokenEnum;
+import com.example.logintype.entity.*;
+import com.example.logintype.entity.enumrated.*;
 import com.example.logintype.exception.BadRequestException;
 import com.example.logintype.exception.ResourceNotFoundException;
 import com.example.logintype.exception.UnauthorizedException;
-import com.example.logintype.repository.RoleRepository;
-import com.example.logintype.repository.TokenBlackListRepository;
-import com.example.logintype.repository.TokenRepository;
-import com.example.logintype.repository.UserRepository;
+import com.example.logintype.repository.*;
 import com.example.logintype.service.AuthService;
-import com.example.logintype.service.UserService;
+import com.example.logintype.service.dto.request.EmailForgotRequestDto;
 import com.example.logintype.service.dto.request.LoginRequestDto;
+import com.example.logintype.service.dto.request.ResetPasswordRequestDto;
 import com.example.logintype.service.dto.request.UserRequestDto;
 import com.example.logintype.service.dto.response.LoginResponseDto;
+import com.example.logintype.service.dto.response.LoginSuccessResponseDto;
 import com.example.logintype.service.jwt.JwtUtils;
+import com.example.logintype.service.util.EmailUtil;
 import net.bytebuddy.utility.RandomString;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -44,9 +37,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Random;
 
 @Service
 @Transactional(readOnly = true)
@@ -56,9 +49,6 @@ public class AuthServiceImp implements AuthService{
     /**
      *
      */
-    @Value("${spring.mail.username}")
-    private String username;
-
     @Value("${app.jwt.blockTime}")
     private long blockTime;
 
@@ -69,12 +59,12 @@ public class AuthServiceImp implements AuthService{
     private final RoleRepository roleRepository;
     private final TokenBlackListRepository tokenBlackListRepository;
     private final TokenRepository tokenRepository;
-    private final UserService userService;
-    private final JavaMailSender javaMailSender;
+    private final OtpRepository otpRepository;
+    private final EmailUtil emailUtil;
 
     @Override
     @Transactional
-    public HttpStatus login(LoginRequestDto loginRequestDto, HttpServletResponse response) {
+    public LoginResponseDto login(LoginRequestDto loginRequestDto) {
 
         try {
 
@@ -83,18 +73,17 @@ public class AuthServiceImp implements AuthService{
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = jwtUtils.generateJwtToken(authentication);
             String refreshToken = jwtUtils.generateJwtTokenRefresh(authentication);
-
-            response.addHeader("X-Access-Token", jwt);
-            response.addHeader("X-Refresh-Token", jwt);
             resetCountLoginFail(loginRequestDto.getEmail());
+
+            return new LoginResponseDto(HttpStatus.OK, jwt, refreshToken);
         } catch (AuthenticationException e) {
 
             if (userRepository.findByEmailAndStatus(loginRequestDto.getEmail(), StatusEnum.UNVERIFIED).isPresent()) {
-                return HttpStatus.NOT_ACCEPTABLE;
+                return new LoginResponseDto(HttpStatus.NOT_ACCEPTABLE, null, null);
             }
 
             if (!userRepository.findByEmail(loginRequestDto.getEmail()).isPresent()) {
-                return HttpStatus.NOT_FOUND;
+                return new LoginResponseDto(HttpStatus.NOT_FOUND, null, null);
             }
 
             User user = userRepository.findByEmail(loginRequestDto.getEmail()).get();
@@ -103,21 +92,20 @@ public class AuthServiceImp implements AuthService{
 
                 if (user.getCountLoginFail() < 3) {
                     increaseLoginFail(user);
-                    return HttpStatus.NOT_FOUND;
+                    return new LoginResponseDto(HttpStatus.NOT_FOUND, null, null);
                 } else {
                     lock(user);
-                    return HttpStatus.LOCKED;
+                    return new LoginResponseDto(HttpStatus.LOCKED, null, null);
                 }
             } else {
 
                 if (unlockWhenTimeExpired(user)) {
-                    return HttpStatus.ACCEPTED;
+                    return new LoginResponseDto(HttpStatus.ACCEPTED, null, null);
                 }
 
-                return HttpStatus.LOCKED;
+                return new LoginResponseDto(HttpStatus.LOCKED, null, null);
             }
         }
-        return HttpStatus.OK;
     }
 
     @Override
@@ -136,18 +124,18 @@ public class AuthServiceImp implements AuthService{
     }
 
     @Override
-    public LoginResponseDto refreshToken(String tokenRefresh, HttpServletResponse response) {
+    public LoginSuccessResponseDto refreshToken(String tokenRefresh, HttpServletResponse response) {
 
         if (tokenBlackListRepository.findByToken(tokenRefresh).isPresent()) {
             throw new UnauthorizedException("Your login session has expired!");
         }
 
-        return new LoginResponseDto(jwtUtils.generateNewToken(tokenRefresh), tokenRefresh);
+        return new LoginSuccessResponseDto(jwtUtils.generateNewToken(tokenRefresh), tokenRefresh);
     }
 
     @Override
     @Transactional
-    public void signUp(UserRequestDto authRequestDto) {
+    public void signUpWithToken(UserRequestDto authRequestDto) {
 
         if (userRepository.existsByEmail(authRequestDto.getEmail())) {
             throw new BadRequestException("Email existed");
@@ -155,6 +143,159 @@ public class AuthServiceImp implements AuthService{
 
         User user = new User(authRequestDto.getUsername(), authRequestDto.getEmail(),
                 passwordEncoder.encode(authRequestDto.getPassword()));
+        signUp(user, authRequestDto);
+
+        String token = RandomString.make(45);
+        Date time = new Date((new Date()).getTime() + 24 * 60 * 60 * 1000);
+        Token tokenVerify = new Token(token, time.toInstant(), TokenEnum.NON_VERIFY, TokenTypeEnum.CREATE_USER, user);
+        tokenRepository.save(tokenVerify);
+        emailUtil.sendMailToken(user.getEmail(), token, "verify email");
+    }
+
+    @Override
+    @Transactional
+    public void signUpWithOtp(UserRequestDto authRequestDto) {
+
+        if (userRepository.existsByEmail(authRequestDto.getEmail())) {
+            throw new BadRequestException("Email existed");
+        }
+
+        User user = new User(authRequestDto.getUsername(), authRequestDto.getEmail(),
+                passwordEncoder.encode(authRequestDto.getPassword()));
+        signUp(user, authRequestDto);
+
+        Random rng = new java.util.Random();
+        long otpToken = (Long)(rng.nextLong() % 100000) + 5200000L;
+        Date time = new Date((new Date()).getTime() + 6 * 60 * 60 * 1000);
+        Otp otp = new Otp(otpToken, OtpStatusEnum.NON_USE, time.toInstant(), user);
+
+        otpRepository.save(otp);
+        emailUtil.sendMailOtp(user.getEmail(), otpToken);
+    }
+
+    @Override
+    @Transactional
+    public void verifyUserByToken(@RequestHeader String tokenVerify){
+
+        Token token = tokenRepository.findByTokenAndStatusAndType(tokenVerify, TokenEnum.NON_VERIFY, TokenTypeEnum.CREATE_USER)
+                .orElseThrow(() -> new ResourceNotFoundException("Your token is not found"));
+
+        if (token.getExpireTime().isAfter(Instant.now())) {
+
+            User user = token.getUser();
+            user.setStatus(StatusEnum.ACTIVE);
+            token.setStatus(TokenEnum.VERIFIED);
+        } else {
+
+            throw new BadRequestException("Your token is expired");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void verifyUserByOtp(Long otpToken){
+
+        Otp otp = otpRepository.findByOtpAndAndStatus(otpToken, OtpStatusEnum.NON_USE)
+                .orElseThrow(() -> new ResourceNotFoundException("Your token is not found"));
+
+        if (otp.getExpireTime().isAfter(Instant.now())) {
+
+            User user = otp.getUser();
+            user.setStatus(StatusEnum.ACTIVE);
+            otp.setStatus(OtpStatusEnum.USED);
+        } else {
+            throw new BadRequestException("Your Otp is expired");
+        }
+    }
+
+    @Override
+    public void resendOtpVerifyUser(@RequestBody String email){
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("This user is not found"));
+
+        if (otpRepository.existsByUser(user)) {
+
+            Otp otp = otpRepository.findByUser(user)
+                    .orElseThrow(() -> new ResourceNotFoundException("This user hasn't been sent verify email"));
+
+            if (otp.getExpireTime().isBefore(Instant.now())) {
+                throw new BadRequestException("Verify email has been sent to you, please check your email");
+            } else {
+
+                Random rng = new java.util.Random();
+                long otpToken = (Long)(rng.nextLong() % 100000) + 5200000L;
+
+                Date time = new Date((new Date()).getTime() + 6 * 60 * 60 * 1000);
+                otp.setOtp(otpToken);
+                otp.setExpireTime(time.toInstant());
+                emailUtil.sendMailOtp(email, otpToken);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void resendTokenVerifyUser(@RequestBody String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("This user is not found"));
+
+        if (tokenRepository.existsByUser(user)) {
+
+            Token token = tokenRepository.findByUser(user)
+                    .orElseThrow(() -> new ResourceNotFoundException("This user hasn't been sent verify email"));
+
+            if (token.getExpireTime().isBefore(Instant.now())) {
+                throw new BadRequestException("Verify email has been sent to you, please check your email");
+            } else {
+
+                String tokenRandom = RandomString.make(45);
+                Date time = new Date((new Date()).getTime() + 24 * 60 * 60 * 1000);
+                Token tokenVerify = new Token(tokenRandom, time.toInstant(), TokenEnum.NON_VERIFY,
+                        TokenTypeEnum.CREATE_USER, user);
+
+                tokenRepository.save(tokenVerify);
+                emailUtil.sendMailToken(email, tokenRandom, "verify email");
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(HttpServletRequest request, EmailForgotRequestDto emailForgotRequestDto) {
+
+        String email = emailForgotRequestDto.getEmail();
+        User userRequest = userRepository.findByEmailAndStatus(email, StatusEnum.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Can't find this user"));
+        String token = RandomString.make(45);
+        Date time = new Date((new Date()).getTime() + 60 * 60 * 1000);
+        Token tokenVerify = new Token(token, time.toInstant(), TokenEnum.NON_VERIFY,
+                TokenTypeEnum.FORGOT_PASSWORD, userRequest);
+
+        tokenRepository.save(tokenVerify);
+        emailUtil.sendMailToken(userRequest.getEmail(), token, "reset password");
+    }
+
+    @Override
+    @Transactional
+    public void updatePasswordByToken(String token, ResetPasswordRequestDto request) {
+
+        if (token == null || token.trim().isEmpty()) {
+            throw new UnauthorizedException("Your reset password token is invalid!");
+        }
+
+        Token tokenRequest = tokenRepository.findByTokenAndStatusAndType(token, TokenEnum.NON_VERIFY,
+                TokenTypeEnum.FORGOT_PASSWORD)
+                .orElseThrow(() -> new BadRequestException("This token is wrong"));
+        User userRequest = tokenRequest.getUser();
+
+        tokenRequest.setStatus(TokenEnum.VERIFIED);
+        userRequest.setPassword(passwordEncoder.encode(request.getNewPassword()));
+    }
+
+    private void signUp(User user, UserRequestDto authRequestDto) {
+
         String role = authRequestDto.getRole();
 
         if (role == null) {
@@ -178,56 +319,6 @@ public class AuthServiceImp implements AuthService{
         user.setStatus(StatusEnum.ACTIVE);
         user.setCountLoginFail(0);
         userRepository.save(user);
-
-//        String token = RandomString.make(45);
-//        Date time = new Date((new Date()).getTime() + 24 * 60 * 60 * 1000);
-//        Token tokenVerify = new Token(token, time.toInstant(), TokenEnum.VERIFY, user);
-//        tokenRepository.save(tokenVerify);
-//
-//        sendMail(user, token);
-    }
-
-    @Override
-    @Transactional
-    public void verifyUser(@RequestHeader String tokenVerify){
-
-        Token token = tokenRepository.findByTokenAndTokenType(tokenVerify, TokenEnum.VERIFY)
-                .orElseThrow(() -> new ResourceNotFoundException("Your token is not found"));
-
-        if (token.getExpireTime().isAfter(Instant.now())) {
-
-            User user = token.getUser();
-            user.setStatus(StatusEnum.ACTIVE);
-            tokenRepository.delete(token);
-        } else {
-
-            throw new BadRequestException("you token is expired");
-        }
-    }
-
-    @Override
-    @Transactional
-    public void resendVerifyUser(@RequestBody String email) {
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("This user is not found"));
-
-        if (tokenRepository.existsByUser(user)) {
-
-            Token token = tokenRepository.findByUser(user)
-                    .orElseThrow(() -> new ResourceNotFoundException("This user hasn't been sent verify email"));
-
-            if (token.getExpireTime().isBefore(Instant.now())) {
-                throw new BadRequestException("Verify email has been sent to you, please check your email");
-            } else {
-
-                String tokenRandom = RandomString.make(45);
-                Date time = new Date((new Date()).getTime() + 24 * 60 * 60 * 1000);
-                token.setToken(tokenRandom);
-                token.setExpireTime(time.toInstant());
-                sendMail(user, tokenRandom);
-            }
-        }
     }
 
     private void addTokenIntoBlackList(String token){
@@ -237,41 +328,6 @@ public class AuthServiceImp implements AuthService{
         tokenBlackList.setExpireTime(jwtUtils.getExpireTimeFromToken(token).toInstant());
 
         tokenBlackListRepository.save(tokenBlackList);
-    }
-
-    private void mailSetup(String email, String contents, String link)
-            throws UnsupportedEncodingException, MessagingException {
-
-        MimeMessage message = javaMailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message);
-
-        helper.setFrom(username, "Manage Book");
-        helper.setTo(email);
-
-        String subject = "Link reset password";
-        String content = "<p> Hello " + email + ", </p>"
-                + "<p> You have requested to" + contents + ", </p>"
-                + "<p> Click the link below to " + contents + " </p>"
-                + "<p> <a href = " + link + " > " + contents + " </a></p>"
-                + "<p> Ignore this email if you do remember your password </p>";
-
-        helper.setSubject(subject);
-        helper.setText(content,true);
-
-        javaMailSender.send(message);
-    }
-
-    private void sendMail(User user, String token) {
-
-        try {
-
-            String link= "http://localhost:3000/verify-email?token=" + token;
-            mailSetup(user.getEmail(), "verify email", link);
-        } catch(UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch(MessagingException e) {
-            e.printStackTrace();
-        }
     }
 
     private void increaseLoginFail(User user) {

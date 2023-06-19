@@ -2,7 +2,7 @@ package com.example.logintype.controller.publics;
 
 import com.example.logintype.constant.Constants;
 import com.example.logintype.service.AuthService;
-import com.example.logintype.service.dto.response.LoginResponseDto;
+import com.example.logintype.service.dto.response.LoginSuccessResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +28,7 @@ public class AuthPublicController {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<LoginResponseDto> refreshTokenByUser(
+    public ResponseEntity<LoginSuccessResponseDto> refreshTokenByUser(
             @RequestHeader(Constants.HEADER_TOKEN_REFRESH) String tokenRefresh,
             HttpServletResponse response
     ) {

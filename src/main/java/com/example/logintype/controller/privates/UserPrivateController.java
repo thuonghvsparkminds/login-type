@@ -1,6 +1,10 @@
 package com.example.logintype.controller.privates;
 
 import com.example.logintype.service.UserService;
+import com.example.logintype.service.dto.request.ChangeEmailRequestDto;
+import com.example.logintype.service.dto.request.UpdatePasswordRequestDto;
+import com.example.logintype.service.dto.request.UpdateUserInfoRequestDto;
+import com.example.logintype.service.dto.request.UserRequestDto;
 import com.example.logintype.service.dto.response.UserResponseDto;
 import com.example.logintype.service.util.PaginationUtil;
 import lombok.RequiredArgsConstructor;
@@ -40,5 +44,50 @@ public class UserPrivateController {
     public ResponseEntity<UserResponseDto> getUser(@PathVariable("bookId") Long bookId) {
 
         return ResponseEntity.ok(userService.getUser(bookId));
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@RequestBody UpdatePasswordRequestDto requestDto) {
+
+        userService.updatePassword(requestDto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createUser(@RequestBody UserRequestDto requestDto) {
+
+        userService.createUser(requestDto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/update-information")
+    public ResponseEntity<UserResponseDto> updateCurrentUser(@RequestBody UpdateUserInfoRequestDto request) {
+
+        userService.updateCurrentUser(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{userId}/update")
+    public ResponseEntity<UserResponseDto> updateUser(
+            @PathVariable Long userId,
+            @RequestBody UpdateUserInfoRequestDto request
+    ) {
+
+        userService.updateUserByAdmin(userId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/change-email")
+    public ResponseEntity<UserResponseDto> changeEmail(@RequestBody ChangeEmailRequestDto requestDto) {
+
+        userService.changeEmail(requestDto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<UserResponseDto> deleteUser(@PathVariable Long userId) {
+
+        userService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
     }
 }

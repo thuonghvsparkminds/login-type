@@ -19,4 +19,8 @@ public interface BookService {
     void updateBook(Long bookId, BookRequestDto request);
 
     void deleteImageBook(Long bookId);
+
+    void deleteBook(Long bookId);
+
+    void addBookNumber(Long bookId, Integer number);
 }

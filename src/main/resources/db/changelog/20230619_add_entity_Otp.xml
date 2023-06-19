@@ -4,18 +4,15 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
 
-    <changeSet id="20230612-1" author="asrielha">
-        <createTable tableName="token">
+    <changeSet id="20230619-1" author="asrielha">
+        <createTable tableName="otp">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="token" type="varchar(250)">
+            <column name="otp" type="varchar(250)">
                 <constraints nullable="false"/>
             </column>
             <column name="expire_time" type="timestamp(6)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="token_type" type="varchar(250)">
                 <constraints nullable="false"/>
             </column>
             <column name="status" type="varchar(250)">
@@ -26,10 +23,10 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet id="20230612-2" author="asrielha">
+    <changeSet id="20230619-2" author="asrielha">
         <addForeignKeyConstraint baseColumnNames="user_id"
-                                 baseTableName="token"
-                                 constraintName="fk_token_user"
+                                 baseTableName="otp"
+                                 constraintName="fk_otp_user"
                                  referencedColumnNames="id"
                                  referencedTableName="user"/>
     </changeSet>

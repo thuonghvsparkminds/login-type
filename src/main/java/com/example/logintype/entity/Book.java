@@ -1,5 +1,6 @@
 package com.example.logintype.entity;
 
+import com.example.logintype.entity.enumrated.BookStatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,4 +29,8 @@ public class Book {
 
     @Column(name = "available")
     private Integer available;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private BookStatusEnum status;
 }

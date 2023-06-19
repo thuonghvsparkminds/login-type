@@ -1,5 +1,9 @@
 package com.example.logintype.service;
 
+import com.example.logintype.service.dto.request.ChangeEmailRequestDto;
+import com.example.logintype.service.dto.request.UpdatePasswordRequestDto;
+import com.example.logintype.service.dto.request.UpdateUserInfoRequestDto;
+import com.example.logintype.service.dto.request.UserRequestDto;
 import com.example.logintype.service.dto.response.UserResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,11 +19,17 @@ public interface UserService {
 
     UserResponseDto getUser(Long bookId);
 
-    //sign up
-//    UserResponseDto createUser(UserRequestDto request);
+    void updatePassword(UpdatePasswordRequestDto updatePasswordRequestDto);
 
-//    void updateUser(Long userId, UserRequestDto request);
-//
-//    void deleteUser(Long userId);
+    void changeEmail(ChangeEmailRequestDto requestDto);
+
+    //sign up
+    void createUser(UserRequestDto request);
+
+    void updateCurrentUser(UpdateUserInfoRequestDto request);
+
+    void updateUserByAdmin(Long userId, UpdateUserInfoRequestDto request);
+
+    void deleteUser(Long userId);
 
 }
