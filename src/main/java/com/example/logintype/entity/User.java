@@ -40,6 +40,9 @@ public class User {
 
     @Column(name = "block_time")
     private Instant blockTime;
+
+    @Column(name = "secret")
+    private String secret;
     
     public User(String username, String email, String password) {
         this.username = username;

@@ -42,3 +42,5 @@ app:
     refreshExpiration: ${JWT_REFRESH_EXPIRATION:2592000}
   storage:
     root-dir: storages
+  2fa:
+    enabled: true

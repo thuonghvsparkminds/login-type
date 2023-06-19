@@ -13,7 +13,7 @@ public interface UserService {
     /**
      *
      */
-    Page<UserResponseDto> getUsers(Specification<User> userList, Pageable pageable);
+    Page<UserResponseDto> getUsers(Pageable pageable);
 
     UserResponseDto getUser(Long bookId);
 

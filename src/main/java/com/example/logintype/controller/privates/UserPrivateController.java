@@ -30,6 +30,7 @@ public class UserPrivateController {
     @GetMapping
     public ResponseEntity<List<UserResponseDto>> getAllUsers(@PageableDefault Pageable pageable) {
 
+
         Page<UserResponseDto> page = userService.getUsers(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),

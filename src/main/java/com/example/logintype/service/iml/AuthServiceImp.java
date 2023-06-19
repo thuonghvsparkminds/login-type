@@ -26,6 +26,7 @@ import com.example.logintype.service.dto.request.UserRequestDto;
 import com.example.logintype.service.dto.response.LoginResponseDto;
 import com.example.logintype.service.jwt.JwtUtils;
 import net.bytebuddy.utility.RandomString;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -62,6 +63,11 @@ public class AuthServiceImp implements AuthService{
     @Value("${app.jwt.blockTime}")
     private long blockTime;
 
+    @Value("${app.2fa.enabled}")
+    private boolean isTwoFaEnabled;
+
+    private static final int SECRET_SIZE = 10;
+
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -69,7 +75,6 @@ public class AuthServiceImp implements AuthService{
     private final RoleRepository roleRepository;
     private final TokenBlackListRepository tokenBlackListRepository;
     private final TokenRepository tokenRepository;
-    private final UserService userService;
     private final JavaMailSender javaMailSender;
 
     @Override
@@ -177,6 +182,7 @@ public class AuthServiceImp implements AuthService{
 //        user.setStatus(StatusEnum.UNVERIFIED);
         user.setStatus(StatusEnum.ACTIVE);
         user.setCountLoginFail(0);
+        user.setSecret(generateSecret());
         userRepository.save(user);
 
 //        String token = RandomString.make(45);
@@ -311,5 +317,9 @@ public class AuthServiceImp implements AuthService{
         }
 
         return false;
+    }
+
+    private String generateSecret() {
+        return RandomStringUtils.random(SECRET_SIZE, true, true).toUpperCase();
     }
 }
